@@ -129,14 +129,16 @@ const Todo = () => {
 
   return (
     // 主容器：使用Tailwind CSS设置样式
-    <div className="max-w-3xl mx-auto mt-12 p-10 bg-white/95 rounded-2xl shadow-lg backdrop-blur-md">
+    <div className="max-w-3xl mx-auto mt-12 p-10 bg-white/95 rounded-2xl shadow-lg backdrop-blur-md
+                    animate-fade-in">
       {/* 标题 */}
-      <h1 className="text-4xl font-semibold text-apple-gray-900 mb-10 text-left tracking-tight">
+      <h1 className="text-4xl font-semibold text-apple-gray-900 mb-10 text-left tracking-tight
+                     animate-typing">
         待办事项
       </h1>
       
       {/* 添加待办事项的表单 */}
-      <form onSubmit={addTodo} className="flex gap-4 mb-10">
+      <form onSubmit={addTodo} className="flex gap-4 mb-10 animate-float">
         <input
           ref={inputRef}
           type="text"
@@ -157,8 +159,10 @@ const Todo = () => {
 
       {/* 提醒时间设置弹窗 */}
       {showReminderModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50
+                      animate-fade-in">
+          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-md w-full mx-4
+                        animate-scale-up">
             <h2 className="text-xl font-semibold text-apple-gray-900 mb-4">
               设置提醒时间
             </h2>
@@ -195,11 +199,16 @@ const Todo = () => {
 
       {/* 待办事项列表 */}
       <ul className="space-y-3">
-        {todos.map(todo => (
+        {todos.map((todo, index) => (
           <li
             key={todo.id}
             className={`flex items-center p-5 bg-apple-gray-50 rounded-xl transition-all
-                      hover:bg-white hover:shadow-sm ${todo.completed ? 'opacity-75' : ''}`}
+                      hover:bg-white hover:shadow-sm hover:-translate-y-0.5
+                      ${todo.completed ? 'opacity-75' : ''}
+                      animate-slide-in`}
+            style={{
+              animationDelay: `${index * 0.1}s`
+            }}
           >
             {editId === todo.id ? (
               <div className="flex flex-col gap-4 flex-1">
