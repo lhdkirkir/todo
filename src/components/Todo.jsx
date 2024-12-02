@@ -1,51 +1,60 @@
 import React, { useState } from 'react';
 
 const Todo = () => {
-  const [todos, setTodos] = useState([]);
-  const [input, setInput] = useState('');
-  const [editId, setEditId] = useState(null);
-  const [editText, setEditText] = useState('');
+  // 状态管理
+  const [todos, setTodos] = useState([]); // 存储所有待办事项的数组
+  const [input, setInput] = useState(''); // 输入框的值
+  const [editId, setEditId] = useState(null); // 当前正在编辑的待办事项ID
+  const [editText, setEditText] = useState(''); // 编辑时的文本内容
 
+  // 添加新的待办事项
   const addTodo = (e) => {
-    e.preventDefault();
-    if (input.trim() !== '') {
+    e.preventDefault(); // 阻止表单默认提交行为
+    if (input.trim() !== '') { // 确保输入不为空
       setTodos([...todos, {
-        id: Date.now(),
+        id: Date.now(), // 使用时间戳作为唯一ID
         text: input,
-        completed: false
+        completed: false // 初始状态为未完成
       }]);
-      setInput('');
+      setInput(''); // 清空输入框
     }
   };
 
+  // 删除待办事项
   const deleteTodo = (id) => {
-    setTodos(todos.filter(todo => todo.id !== id));
+    setTodos(todos.filter(todo => todo.id !== id)); // 过滤掉要删除的项
   };
 
+  // 切换待办事项的完成状态
   const toggleTodo = (id) => {
     setTodos(todos.map(todo =>
       todo.id === id ? { ...todo, completed: !todo.completed } : todo
     ));
   };
 
+  // 开始编辑待办事项
   const startEdit = (id, text) => {
-    setEditId(id);
-    setEditText(text);
+    setEditId(id); // 设置当前编辑项的ID
+    setEditText(text); // 设置编辑框的初始文本
   };
 
+  // 保存编辑后的内容
   const saveEdit = (id) => {
     setTodos(todos.map(todo =>
       todo.id === id ? { ...todo, text: editText } : todo
     ));
-    setEditId(null);
+    setEditId(null); // 退出编辑模式
   };
 
   return (
+    // 主容器：使用Tailwind CSS设置样式
     <div className="max-w-3xl mx-auto mt-12 p-10 bg-white/95 rounded-2xl shadow-lg backdrop-blur-md">
+      {/* 标题 */}
       <h1 className="text-4xl font-semibold text-apple-gray-900 mb-10 text-left tracking-tight">
         待办事项
       </h1>
       
+      {/* 添加待办事项的表单 */}
       <form onSubmit={addTodo} className="flex gap-4 mb-10">
         <input
           type="text"
@@ -64,6 +73,7 @@ const Todo = () => {
         </button>
       </form>
       
+      {/* 待办事项列表 */}
       <ul className="space-y-3">
         {todos.map(todo => (
           <li
@@ -71,6 +81,7 @@ const Todo = () => {
             className={`flex items-center p-5 bg-apple-gray-50 rounded-xl transition-all
                       hover:bg-white hover:shadow-sm ${todo.completed ? 'opacity-75' : ''}`}
           >
+            {/* 编辑模式 */}
             {editId === todo.id ? (
               <div className="flex gap-4 flex-1">
                 <input
@@ -89,7 +100,9 @@ const Todo = () => {
                 </button>
               </div>
             ) : (
+              // 显示模式
               <>
+                {/* 完成状态复选框 */}
                 <input
                   type="checkbox"
                   checked={todo.completed}
@@ -97,10 +110,12 @@ const Todo = () => {
                   className="w-6 h-6 rounded-lg border-apple-gray-100 text-apple-blue 
                            focus:ring-apple-blue cursor-pointer"
                 />
+                {/* 待办事项文本 */}
                 <span className={`flex-1 mx-4 text-apple-gray-900
                               ${todo.completed ? 'line-through text-apple-gray-500' : ''}`}>
                   {todo.text}
                 </span>
+                {/* 操作按钮 */}
                 <div className="flex gap-3">
                   <button
                     onClick={() => startEdit(todo.id, todo.text)}
