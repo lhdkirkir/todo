@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 const Todo = () => {
   // 状态管理
@@ -6,18 +6,82 @@ const Todo = () => {
   const [input, setInput] = useState(''); // 输入框的值
   const [editId, setEditId] = useState(null); // 当前正在编辑的待办事项ID
   const [editText, setEditText] = useState(''); // 编辑时的文本内容
+  const [showReminderModal, setShowReminderModal] = useState(false); // 新增：控制提醒时间弹窗
+  const [reminderDate, setReminderDate] = useState('');
+  const [tempTodo, setTempTodo] = useState(null); // 新增：临时存储待添加的待办事项
+
+  // 添加输入框引用
+  const inputRef = useRef(null);
+
+  // 添加键盘事件监听
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!showReminderModal) return; // 只在弹窗显示时处理键盘事件
+
+      if (e.key === 'Enter') {
+        e.preventDefault(); // 防止表单提交
+        confirmAddTodo();
+      } else if (e.key === 'Escape') {
+        cancelAddTodo();
+      }
+    };
+
+    // 添加事件监听
+    document.addEventListener('keydown', handleKeyDown);
+
+    // 清理事件监听
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showReminderModal]); // 依赖项包含 showReminderModal
+
+  // 获取当前时间并格式化为datetime-local输入框所需的格式
+  const getCurrentDateTime = () => {
+    const now = new Date();
+    // 补零函数
+    const pad = (num) => num.toString().padStart(2, '0');
+    
+    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  };
 
   // 添加新的待办事项
   const addTodo = (e) => {
-    e.preventDefault(); // 阻止表单默认提交行为
-    if (input.trim() !== '') { // 确保输入不为空
-      setTodos([...todos, {
-        id: Date.now(), // 使用时间戳作为唯一ID
+    e.preventDefault();
+    if (input.trim() !== '') {
+      // 先保存待办事项信息，并显示提醒时间设置弹窗
+      setTempTodo({
+        id: Date.now(),
         text: input,
-        completed: false // 初始状态为未完成
-      }]);
-      setInput(''); // 清空输入框
+        completed: false
+      });
+      // 设置默认时间为当前时间
+      setReminderDate(getCurrentDateTime());
+      setShowReminderModal(true);
     }
+  };
+
+  // 确认添加待办事项（包含提醒时间）
+  const confirmAddTodo = () => {
+    setTodos([...todos, {
+      ...tempTodo,
+      reminderDate: reminderDate || null
+    }]);
+    setInput('');
+    setReminderDate('');
+    setShowReminderModal(false);
+    setTempTodo(null);
+    // 聚焦到输入框
+    inputRef.current?.focus();
+  };
+
+  // 取消添加待办事项
+  const cancelAddTodo = () => {
+    setShowReminderModal(false);
+    setReminderDate('');
+    setTempTodo(null);
+    setInput(''); // 清空输入框
+    // 聚焦到输入框
+    inputRef.current?.focus();
   };
 
   // 删除待办事项
@@ -33,17 +97,34 @@ const Todo = () => {
   };
 
   // 开始编辑待办事项
-  const startEdit = (id, text) => {
-    setEditId(id); // 设置当前编辑项的ID
-    setEditText(text); // 设置编辑框的初始文本
+  const startEdit = (id, text, date) => {
+    setEditId(id);
+    setEditText(text);
   };
 
   // 保存编辑后的内容
   const saveEdit = (id) => {
     setTodos(todos.map(todo =>
-      todo.id === id ? { ...todo, text: editText } : todo
+      todo.id === id ? { 
+        ...todo, 
+        text: editText,
+        reminderDate: reminderDate || null // 新增：更新提醒日期
+      } : todo
     ));
-    setEditId(null); // 退出编辑模式
+    setEditId(null);
+  };
+
+  // 新增：格式化日期显示
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   return (
@@ -57,6 +138,7 @@ const Todo = () => {
       {/* 添加待办事项的表单 */}
       <form onSubmit={addTodo} className="flex gap-4 mb-10">
         <input
+          ref={inputRef}
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -72,7 +154,45 @@ const Todo = () => {
           添加
         </button>
       </form>
-      
+
+      {/* 提醒时间设置弹窗 */}
+      {showReminderModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-md w-full mx-4">
+            <h2 className="text-xl font-semibold text-apple-gray-900 mb-4">
+              设置提醒时间
+            </h2>
+            <p className="text-apple-gray-500 mb-4">
+              待办事项：{tempTodo?.text}
+            </p>
+            <input
+              type="datetime-local"
+              value={reminderDate}
+              onChange={(e) => setReminderDate(e.target.value)}
+              className="w-full px-4 py-2 bg-apple-gray-50 rounded-xl border-none mb-4
+                       focus:outline-none focus:ring-2 focus:ring-apple-blue focus:bg-white"
+              autoFocus // 自动聚焦到时间输入框
+            />
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={cancelAddTodo}
+                className="px-4 py-2 bg-apple-gray-50 text-apple-gray-900 rounded-lg font-medium
+                         hover:bg-apple-gray-100 transition-colors"
+              >
+                取消 (Esc)
+              </button>
+              <button
+                onClick={confirmAddTodo}
+                className="px-4 py-2 bg-apple-blue text-white rounded-lg font-medium
+                         hover:bg-apple-blue/90 transition-colors"
+              >
+                确定 (Enter)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 待办事项列表 */}
       <ul className="space-y-3">
         {todos.map(todo => (
@@ -81,9 +201,8 @@ const Todo = () => {
             className={`flex items-center p-5 bg-apple-gray-50 rounded-xl transition-all
                       hover:bg-white hover:shadow-sm ${todo.completed ? 'opacity-75' : ''}`}
           >
-            {/* 编辑模式 */}
             {editId === todo.id ? (
-              <div className="flex gap-4 flex-1">
+              <div className="flex flex-col gap-4 flex-1">
                 <input
                   type="text"
                   value={editText}
@@ -100,9 +219,7 @@ const Todo = () => {
                 </button>
               </div>
             ) : (
-              // 显示模式
               <>
-                {/* 完成状态复选框 */}
                 <input
                   type="checkbox"
                   checked={todo.completed}
@@ -110,15 +227,20 @@ const Todo = () => {
                   className="w-6 h-6 rounded-lg border-apple-gray-100 text-apple-blue 
                            focus:ring-apple-blue cursor-pointer"
                 />
-                {/* 待办事项文本 */}
-                <span className={`flex-1 mx-4 text-apple-gray-900
-                              ${todo.completed ? 'line-through text-apple-gray-500' : ''}`}>
-                  {todo.text}
-                </span>
-                {/* 操作按钮 */}
+                <div className="flex-1 mx-4">
+                  <span className={`block text-apple-gray-900
+                                ${todo.completed ? 'line-through text-apple-gray-500' : ''}`}>
+                    {todo.text}
+                  </span>
+                  {todo.reminderDate && (
+                    <span className="block text-sm text-apple-gray-500 mt-1">
+                      提醒时间: {formatDate(todo.reminderDate)}
+                    </span>
+                  )}
+                </div>
                 <div className="flex gap-3">
                   <button
-                    onClick={() => startEdit(todo.id, todo.text)}
+                    onClick={() => startEdit(todo.id, todo.text, todo.reminderDate)}
                     className="px-4 py-2 bg-apple-gray-50 text-apple-blue rounded-lg font-medium
                              hover:bg-apple-gray-100 transition-colors"
                   >
