@@ -3,12 +3,14 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches:
-      - main  # 或者是你的默认分支名，如 master
+      - main  # 需要确认这里是否与你的默认分支名匹配
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    permissions:  # 添加必要的权限
+      contents: write
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -25,10 +27,10 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          CI: false  # 防止将警告视为错误
+          CI: false
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: build  # 部署构建输出目录
-          branch: gh-pages  # 部署到 gh-pages 分支 
+          folder: build
+          branch: gh-pages
